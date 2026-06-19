@@ -73,20 +73,19 @@ app.put('/novels/:id', async(req, res) => {
   const client = await pool.connect();
 
   try {
-    const updateQuery = 'UPDATE novels SET title = $1, author = $2, year_published = $3 WHERE id = $4'
+    const updateQuery = 'UPDATE novels SET title = $1, author = $2, year_published = $3 WHERE id = $4 RETURNING *'
     const queryData = [updatedData.title, updatedData.author, updatedData.year_published, id]
-    await client.query(updateQuery, queryData)
+    const respond = await client.query(updateQuery, queryData)
 
-    // if (!title || !author || !year_published === undefined) {
-    //   return res.status(400).send("Empty Field")
-    // }
+    if (!updatedData.title || !updatedData.author || !updatedData.year_published) {
+      res.status(400).send("Empty Field")
+    }
 
-
-    // if (year_published !== "number") {
-    //   return res.status(400).send("Empty Field")
-    // }
-
-    res.json({ "status": "success", "message": "Novels updated successfully"})
+    if (typeof updatedData.year_published !== "number") {
+      res.status(400).send("Year field is Not Number")
+    }
+    
+    res.json({ "status": "success", "message": "Novels updated successfully", "data": respond.rows})
   } catch (error) {
     console.error(error)
     res.status(500).send("An error occured");
